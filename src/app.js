@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes.js';
 import productosRoutes from './routes/productos.routes.js';
 import inventarioRoutes from './routes/inventario.routes.js';
+import dashboardRoutes from './routes/dashboard.routes.js';
 
 dotenv.config();
 
@@ -24,5 +25,6 @@ app.get('/', (req, res) => {
 app.use('/auth', authRoutes);
 app.use('/productos', productosRoutes);
 app.use('/inventario', inventarioRoutes);
+app.use('/dashboard', dashboardRoutes);
 
 export default app;
