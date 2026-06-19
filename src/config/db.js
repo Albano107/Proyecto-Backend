@@ -1,4 +1,4 @@
-import sql from 'mssql/msnodesqlv8.js';
+import sql from 'mssql';
 import dotenv from 'dotenv';
 
 dotenv.config();
