@@ -4,12 +4,15 @@ import { calcularEstado } from '../services/semaforo.service.js';
 // GET /inventario
 export const obtenerInventario = async (req, res) => {
     try {
-        const resultado = await sql.query(`
+        const { id_sucursal } = req.query;
+
+        let query = `
             SELECT
                 i.id_inventario,
                 p.nombre AS producto,
                 d.nombre AS departamento,
                 d.dias_alerta,
+                s.id_sucursal,
                 s.nombre AS sucursal,
                 i.cantidad,
                 i.fecha_vencimiento
@@ -20,7 +23,13 @@ export const obtenerInventario = async (req, res) => {
                 ON p.id_departamento = d.id_departamento
             INNER JOIN Sucursales s
                 ON i.id_sucursal = s.id_sucursal
-        `);
+        `;
+
+        if (id_sucursal) {
+            query += ` WHERE i.id_sucursal = ${parseInt(id_sucursal)}`;
+        }
+
+        const resultado = await sql.query(query);
 
         const inventario = resultado.recordset.map(item => ({
             ...item,
