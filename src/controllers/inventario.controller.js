@@ -8,6 +8,16 @@ export const obtenerInventario = async (req, res) => {
 
         const usarPaginacion = page !== undefined || limit !== undefined;
 
+        const columnas = {
+            nombre: "p.nombre",
+            vencimiento: "i.fecha_vencimiento",
+            cantidad: "i.cantidad",
+            estado: "i.fecha_vencimiento"
+        };
+
+        const orderBy = columnas[req.query.orderBy] || "p.nombre";
+        const orderDir = req.query.orderDir === "desc" ? "DESC" : "ASC";
+
         const pagina = Math.max(parseInt(page || "1", 10), 1);
 
         const limiteSolicitado = parseInt(limit || "10", 10);
@@ -55,7 +65,7 @@ export const obtenerInventario = async (req, res) => {
                 i.fecha_vencimiento
             ${fromJoin}
             ${whereClause}
-            ORDER BY i.fecha_vencimiento ASC, i.id_inventario ASC
+            ORDER BY ${orderBy} ${orderDir}
         `;
 
         if (usarPaginacion) {
