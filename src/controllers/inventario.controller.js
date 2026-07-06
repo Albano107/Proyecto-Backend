@@ -57,6 +57,7 @@ export const obtenerInventario = async (req, res) => {
             SELECT
                 i.id_inventario,
                 p.nombre AS producto,
+                p.codigo_barras,
                 d.nombre AS departamento,
                 d.dias_alerta,
                 s.id_sucursal,
