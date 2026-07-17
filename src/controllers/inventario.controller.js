@@ -4,7 +4,7 @@ import { calcularEstado } from '../services/semaforo.service.js';
 // GET /inventario
 export const obtenerInventario = async (req, res) => {
     try {
-        const { id_sucursal, page, limit, buscar } = req.query;
+        const { id_sucursal, page, limit } = req.query;
 
         const usarPaginacion = page !== undefined || limit !== undefined;
 
@@ -29,7 +29,7 @@ export const obtenerInventario = async (req, res) => {
 
         const offset = (pagina - 1) * limite;
 
-        const condiciones = [];
+        let whereClause = "";
 
         if (id_sucursal) {
             const sucursalId = parseInt(id_sucursal, 10);
@@ -40,25 +40,8 @@ export const obtenerInventario = async (req, res) => {
                 });
             }
 
-            condiciones.push(`i.id_sucursal = ${sucursalId}`);
+            whereClause = `WHERE i.id_sucursal = ${sucursalId}`;
         }
-
-        if (buscar && buscar.trim() !== "") {
-            const busquedaLimpia = buscar.trim().replace(/'/g, "''");
-
-            condiciones.push(`
-                (
-                    p.nombre LIKE '%${busquedaLimpia}%'
-                    OR p.codigo_barras LIKE '%${busquedaLimpia}%'
-                    OR d.nombre LIKE '%${busquedaLimpia}%'
-                    OR s.nombre LIKE '%${busquedaLimpia}%'
-                )
-            `);
-        }
-
-        const whereClause = condiciones.length > 0
-            ? `WHERE ${condiciones.join(" AND ")}`
-            : "";
 
         const fromJoin = `
             FROM Inventario i
@@ -100,15 +83,10 @@ export const obtenerInventario = async (req, res) => {
             estado: calcularEstado(item.fecha_vencimiento, item.dias_alerta)
         }));
 
+        // Si no viene page/limit, mantiene compatibilidad con código anterior
         if (!usarPaginacion) {
             return res.status(200).json(inventario);
         }
-
-        const totalQuery = `
-            SELECT COUNT(*) AS total
-            ${fromJoin}
-            ${whereClause}
-        `;
 
         const resumenQuery = `
             SELECT
@@ -163,10 +141,9 @@ export const obtenerInventario = async (req, res) => {
             ${whereClause}
         `;
 
-        const totalResultado = await sql.query(totalQuery);
         const resumenResultado = await sql.query(resumenQuery);
 
-        const total = totalResultado.recordset[0].total;
+        const total = resumenResultado.recordset[0].totalProductos;
         const totalPaginas = Math.max(Math.ceil(total / limite), 1);
 
         res.status(200).json({
@@ -190,40 +167,29 @@ export const agregarInventario = async (req, res) => {
         const { id_producto, id_sucursal, fecha_vencimiento, cantidad } = req.body;
 
         if (!id_producto || !id_sucursal || !fecha_vencimiento || cantidad == null) {
-            return res.status(400).json({
-                mensaje: 'Faltan datos obligatorios'
-            });
+            return res.status(400).json({ mensaje: 'Faltan datos obligatorios' });
         }
 
         if (cantidad <= 0) {
-            return res.status(400).json({
-                mensaje: 'La cantidad debe ser mayor a 0'
-            });
+            return res.status(400).json({ mensaje: 'La cantidad debe ser mayor a 0' });
         }
 
         const producto = await sql.query`
-            SELECT id_producto
-            FROM Productos
-            WHERE id_producto = ${id_producto}
-              AND activo = 1
+            SELECT id_producto FROM Productos
+            WHERE id_producto = ${id_producto} AND activo = 1
         `;
 
         if (producto.recordset.length === 0) {
-            return res.status(404).json({
-                mensaje: 'Producto no encontrado'
-            });
+            return res.status(404).json({ mensaje: 'Producto no encontrado' });
         }
 
         const sucursal = await sql.query`
-            SELECT id_sucursal
-            FROM Sucursales
+            SELECT id_sucursal FROM Sucursales
             WHERE id_sucursal = ${id_sucursal}
         `;
 
         if (sucursal.recordset.length === 0) {
-            return res.status(404).json({
-                mensaje: 'Sucursal no encontrada'
-            });
+            return res.status(404).json({ mensaje: 'Sucursal no encontrada' });
         }
 
         await sql.query`
@@ -239,7 +205,6 @@ export const agregarInventario = async (req, res) => {
 
     } catch (error) {
         console.error(error);
-
         res.status(500).json({
             mensaje: 'Error al agregar producto al inventario'
         });
@@ -253,27 +218,20 @@ export const editarInventario = async (req, res) => {
         const { fecha_vencimiento, cantidad } = req.body;
 
         if (!fecha_vencimiento || cantidad == null) {
-            return res.status(400).json({
-                mensaje: 'Faltan datos obligatorios'
-            });
+            return res.status(400).json({ mensaje: 'Faltan datos obligatorios' });
         }
 
         if (cantidad < 0) {
-            return res.status(400).json({
-                mensaje: 'La cantidad no puede ser negativa'
-            });
+            return res.status(400).json({ mensaje: 'La cantidad no puede ser negativa' });
         }
 
         const existente = await sql.query`
-            SELECT id_inventario
-            FROM Inventario
+            SELECT id_inventario FROM Inventario
             WHERE id_inventario = ${id}
         `;
 
         if (existente.recordset.length === 0) {
-            return res.status(404).json({
-                mensaje: 'Registro de inventario no encontrado'
-            });
+            return res.status(404).json({ mensaje: 'Registro de inventario no encontrado' });
         }
 
         await sql.query`
@@ -289,7 +247,6 @@ export const editarInventario = async (req, res) => {
 
     } catch (error) {
         console.error(error);
-
         res.status(500).json({
             mensaje: 'Error al editar inventario'
         });
@@ -302,8 +259,7 @@ export const eliminarInventario = async (req, res) => {
         const { id } = req.params;
 
         const existente = await sql.query`
-            SELECT id_inventario
-            FROM Inventario
+            SELECT id_inventario FROM Inventario
             WHERE id_inventario = ${id}
         `;
 
@@ -314,8 +270,7 @@ export const eliminarInventario = async (req, res) => {
         }
 
         const retiros = await sql.query`
-            SELECT TOP 1 id_retiro
-            FROM Retiros
+            SELECT TOP 1 id_retiro FROM Retiros
             WHERE id_inventario = ${id}
         `;
 
@@ -336,7 +291,6 @@ export const eliminarInventario = async (req, res) => {
 
     } catch (error) {
         console.error(error);
-
         res.status(500).json({
             mensaje: 'Error al eliminar inventario'
         });

@@ -20,7 +20,7 @@ export const obtenerDashboard = async (req, res) => {
 
         // Usuarios activos
         const usuariosResult = await sql.query(`
-            SELECT *
+            SELECT COUNT(*) AS cantidad
             FROM Usuarios
             WHERE activo = 1
         `);
@@ -80,7 +80,7 @@ export const obtenerDashboard = async (req, res) => {
             verdes,
             amarillos,
             rojos,
-            usuariosActivos: usuariosResult.recordset.length,
+            usuariosActivos: usuariosResult.recordset[0].cantidad,
             productosCriticos,
             retiros: retirosResult.recordset
         });
