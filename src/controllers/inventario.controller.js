@@ -4,7 +4,7 @@ import { calcularEstado } from '../services/semaforo.service.js';
 // GET /inventario
 export const obtenerInventario = async (req, res) => {
     try {
-        const { id_sucursal, page, limit } = req.query;
+        const { id_sucursal, page, limit, buscar } = req.query;
 
         const usarPaginacion = page !== undefined || limit !== undefined;
 
@@ -29,7 +29,7 @@ export const obtenerInventario = async (req, res) => {
 
         const offset = (pagina - 1) * limite;
 
-        let whereClause = "";
+        const condiciones = [];
 
         if (id_sucursal) {
             const sucursalId = parseInt(id_sucursal, 10);
@@ -40,8 +40,25 @@ export const obtenerInventario = async (req, res) => {
                 });
             }
 
-            whereClause = `WHERE i.id_sucursal = ${sucursalId}`;
+            condiciones.push(`i.id_sucursal = ${sucursalId}`);
         }
+
+        if (buscar && buscar.trim() !== "") {
+            const busquedaLimpia = buscar.trim().replace(/'/g, "''");
+
+            condiciones.push(`
+                (
+                    p.nombre LIKE '%${busquedaLimpia}%'
+                    OR CAST(p.codigo_barras AS VARCHAR(100)) LIKE '%${busquedaLimpia}%'
+                    OR d.nombre LIKE '%${busquedaLimpia}%'
+                    OR s.nombre LIKE '%${busquedaLimpia}%'
+                )
+            `);
+        }
+
+        const whereClause = condiciones.length > 0
+            ? `WHERE ${condiciones.join(" AND ")}`
+            : "";
 
         const fromJoin = `
             FROM Inventario i
