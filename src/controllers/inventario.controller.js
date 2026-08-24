@@ -209,15 +209,17 @@ export const agregarInventario = async (req, res) => {
             return res.status(404).json({ mensaje: 'Sucursal no encontrada' });
         }
 
-        await sql.query`
+        const insertado = await sql.query`
             INSERT INTO Inventario
             (id_producto, id_sucursal, fecha_vencimiento, cantidad, fecha_registro)
+            OUTPUT INSERTED.id_inventario
             VALUES
             (${id_producto}, ${id_sucursal}, ${fecha_vencimiento}, ${cantidad}, GETDATE())
         `;
 
         res.status(201).json({
-            mensaje: 'Producto agregado al inventario correctamente'
+            mensaje: 'Producto agregado al inventario correctamente',
+            id_inventario: insertado.recordset[0].id_inventario
         });
 
     } catch (error) {

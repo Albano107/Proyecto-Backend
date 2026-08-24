@@ -1,0 +1,21 @@
+meta {
+  name: Agregar item (datos faltantes)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/inventario
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "cantidad": 5
+  }
+}
+
+assert {
+  res.status: eq 400
+}

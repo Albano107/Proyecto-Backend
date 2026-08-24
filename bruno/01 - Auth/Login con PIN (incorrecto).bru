@@ -1,0 +1,21 @@
+meta {
+  name: Login con PIN (incorrecto)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/auth/login-pin
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "pin": "9999"
+  }
+}
+
+assert {
+  res.status: eq 401
+}

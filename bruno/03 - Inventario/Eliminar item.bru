@@ -1,0 +1,15 @@
+meta {
+  name: Eliminar item
+  type: http
+  seq: 9
+}
+
+delete {
+  url: {{baseUrl}}/inventario/{{id_inventario_creado}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+}

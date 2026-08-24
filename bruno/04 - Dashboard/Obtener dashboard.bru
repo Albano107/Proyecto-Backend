@@ -1,0 +1,19 @@
+meta {
+  name: Obtener dashboard
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/dashboard
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.verdes: isDefined
+  res.body.amarillos: isDefined
+  res.body.rojos: isDefined
+  res.body.usuariosActivos: isDefined
+}

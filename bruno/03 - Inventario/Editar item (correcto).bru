@@ -1,0 +1,22 @@
+meta {
+  name: Editar item (correcto)
+  type: http
+  seq: 7
+}
+
+put {
+  url: {{baseUrl}}/inventario/{{id_inventario}}
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "fecha_vencimiento": "2026-11-30",
+    "cantidad": 8
+  }
+}
+
+assert {
+  res.status: eq 200
+}

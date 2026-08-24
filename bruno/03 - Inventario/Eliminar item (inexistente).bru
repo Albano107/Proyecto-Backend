@@ -1,0 +1,15 @@
+meta {
+  name: Eliminar item (inexistente)
+  type: http
+  seq: 11
+}
+
+delete {
+  url: {{baseUrl}}/inventario/999999
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 404
+}

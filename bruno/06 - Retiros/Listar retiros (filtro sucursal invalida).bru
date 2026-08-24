@@ -1,0 +1,15 @@
+meta {
+  name: Listar retiros (filtro sucursal invalida)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/retiros?id_sucursal=abc
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 400
+}

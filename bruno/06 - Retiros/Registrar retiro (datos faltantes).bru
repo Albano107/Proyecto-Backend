@@ -1,0 +1,21 @@
+meta {
+  name: Registrar retiro (datos faltantes)
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/retiros
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "cantidad": 1
+  }
+}
+
+assert {
+  res.status: eq 400
+}

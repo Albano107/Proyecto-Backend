@@ -1,0 +1,15 @@
+meta {
+  name: Listar inventario (filtro sucursal + buscar)
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/inventario?id_sucursal={{id_sucursal}}&buscar=leche&orderBy=vencimiento&orderDir=desc
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+}

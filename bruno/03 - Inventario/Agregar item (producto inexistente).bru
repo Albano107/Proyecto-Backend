@@ -1,0 +1,24 @@
+meta {
+  name: Agregar item (producto inexistente)
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/inventario
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "id_producto": 999999,
+    "id_sucursal": {{id_sucursal}},
+    "fecha_vencimiento": "2026-12-31",
+    "cantidad": 5
+  }
+}
+
+assert {
+  res.status: eq 404
+}

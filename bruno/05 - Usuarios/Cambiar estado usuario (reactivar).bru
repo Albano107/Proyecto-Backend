@@ -1,0 +1,21 @@
+meta {
+  name: Cambiar estado usuario (reactivar)
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{baseUrl}}/usuarios/{{id_usuario}}
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "activo": true
+  }
+}
+
+assert {
+  res.status: eq 200
+}

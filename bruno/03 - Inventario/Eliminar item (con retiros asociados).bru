@@ -1,0 +1,15 @@
+meta {
+  name: Eliminar item (con retiros asociados)
+  type: http
+  seq: 10
+}
+
+delete {
+  url: {{baseUrl}}/inventario/{{id_inventario_con_retiros}}
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 409
+}

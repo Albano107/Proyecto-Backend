@@ -1,0 +1,17 @@
+meta {
+  name: Resumen de retiros
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/retiros/resumen
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.totalRetiros: isDefined
+  res.body.totalUnidades: isDefined
+}

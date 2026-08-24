@@ -1,0 +1,32 @@
+meta {
+  name: Agregar item (correcto)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/inventario
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "id_producto": {{id_producto}},
+    "id_sucursal": {{id_sucursal}},
+    "fecha_vencimiento": "2026-12-31",
+    "cantidad": 10
+  }
+}
+
+assert {
+  res.status: eq 201
+  res.body.id_inventario: isDefined
+}
+
+script:post-response {
+  // Guarda el id creado para que "Eliminar item" borre siempre un registro
+  // fresco de esta misma corrida, en vez de depender de un id fijo que
+  // termina "consumido" (borrado) en corridas anteriores.
+  bru.setEnvVar("id_inventario_creado", res.body.id_inventario);
+}

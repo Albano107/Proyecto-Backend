@@ -1,0 +1,18 @@
+meta {
+  name: Listar inventario (paginado)
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/inventario?page=1&limit=10
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body.pagina: eq 1
+  res.body.datos: isDefined
+  res.body.resumen: isDefined
+}

@@ -1,0 +1,24 @@
+meta {
+  name: Registrar retiro (correcto)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/retiros
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "id_inventario": {{id_inventario}},
+    "cantidad": 1,
+    "motivo": "Vencimiento",
+    "id_usuario": {{id_usuario}}
+  }
+}
+
+assert {
+  res.status: eq 201
+}

@@ -2,15 +2,18 @@
 
 Backend desarrollado con Node.js, Express y SQL Server para la gestión de productos próximos a vencer y control de mermas en supermercados.
 
+> 🧪 **Tests de API:** hay una colección de [Bruno](https://www.usebruno.com/) lista para probar todos los endpoints de forma visual — ver [`TESTING.md`](./TESTING.md) para correrla (incluye una base de prueba descartable con Docker) y [`bruno/README.md`](./bruno/README.md) para el detalle de cada request.
+
 ---
 
 # 📦 Tecnologías Utilizadas
 
 - Node.js
-- Express.js
-- SQL Server
-- JWT
-- Docker (pendiente)
+- Express 5
+- SQL Server (driver `mssql`, conexión estándar por usuario/contraseña)
+- dotenv
+- cors
+- Docker
 - React (Frontend)
 - Git y GitHub
 
@@ -19,7 +22,7 @@ Backend desarrollado con Node.js, Express y SQL Server para la gestión de produ
 # 📂 Estructura del Proyecto
 
 ```txt
-Proyecto-Backend/
+GongolaPRO-back/
 │
 ├── src/
 │   │
@@ -27,24 +30,40 @@ Proyecto-Backend/
 │   │   └── db.js
 │   │
 │   ├── controllers/
+│   │   ├── auth.controller.js
+│   │   ├── productos.controller.js
+│   │   ├── inventario.controller.js
+│   │   ├── dashboard.controller.js
+│   │   ├── usuarios.controller.js
+│   │   ├── retiros.controller.js
+│   │   └── sucursales.controller.js
 │   │
 │   ├── routes/
+│   │   ├── auth.routes.js
+│   │   ├── productos.routes.js
+│   │   ├── inventario.routes.js
+│   │   ├── dashboard.routes.js
+│   │   ├── usuarios.routes.js
+│   │   ├── retiros.routes.js
+│   │   └── sucursales.routes.js
 │   │
 │   ├── services/
-│   │
-│   ├── middlewares/
-│   │
-│   ├── utils/
+│   │   └── semaforo.service.js
 │   │
 │   ├── app.js
 │   │
 │   └── server.js
 │
+├── bruno/              # colección de tests de API (ver TESTING.md)
+├── Dockerfile
 ├── .env
 ├── .gitignore
 ├── package.json
-└── README.md
+├── README.md
+└── TESTING.md          # cómo correr los tests vos mismo
 ```
+
+> Nota: `middlewares/` y `utils/` todavía no existen — no hay validación de JWT ni control de rol a nivel de backend por ahora (ver "Estado actual").
 
 ---
 
@@ -54,7 +73,7 @@ Proyecto-Backend/
 Contiene configuraciones generales del sistema.
 
 ### db.js
-Archivo encargado de establecer la conexión con SQL Server.
+Establece la conexión con SQL Server usando `mssql` (usuario/contraseña, sin autenticación Windows) y reintenta la conexión hasta 5 veces con 5s de espera antes de fallar.
 
 ---
 
@@ -62,39 +81,40 @@ Archivo encargado de establecer la conexión con SQL Server.
 Contiene la lógica principal de cada módulo del sistema.
 
 ### auth.controller.js
-Maneja autenticación y login de usuarios.
+Login por email/contraseña y por PIN. Consulta directamente `Usuarios` (con su `Rol` y `Sucursal`) y compara la contraseña en texto plano.
 
 ### productos.controller.js
-Gestiona operaciones relacionadas con productos.
+Lista el catálogo de productos.
 
 ### inventario.controller.js
-Gestiona el registro y consulta de productos controlados en góndola.
-
-### retiros.controller.js
-Gestiona el registro de productos retirados por vencimiento o merma.
+CRUD del inventario controlado en góndola (alta, edición, baja y listado con paginación/filtros).
 
 ### dashboard.controller.js
-Genera estadísticas y datos para el panel principal.
+Genera estadísticas y datos para el panel principal (`inicio`).
+
+### usuarios.controller.js
+Lista usuarios y permite activar/desactivar cuentas.
+
+### retiros.controller.js
+Registra retiros de productos por vencimiento o merma, y expone su historial y resumen.
+
+### sucursales.controller.js
+Lista las sucursales, usadas como filtro en Inventario y Reportes.
 
 ---
 
 ## 📂 src/routes
-Define los endpoints de la API REST.
+Define los endpoints de la API REST. Todas montadas en `app.js` bajo su propio prefijo.
 
-### auth.routes.js
-Rutas relacionadas con autenticación.
-
-### productos.routes.js
-Rutas para gestión de productos.
-
-### inventario.routes.js
-Rutas para control de inventario y alertas.
-
-### retiros.routes.js
-Rutas para registro y consulta de mermas.
-
-### dashboard.routes.js
-Rutas para estadísticas y reportes.
+| Prefijo | Rutas | Descripción |
+|---|---|---|
+| `/auth` | `POST /login`, `POST /login-pin` | Autenticación por email/contraseña o PIN |
+| `/productos` | `GET /` | Catálogo de productos |
+| `/inventario` | `GET /`, `POST /`, `PUT /:id`, `DELETE /:id` | CRUD de inventario en góndola |
+| `/dashboard` | `GET /` | Resumen/estadísticas para Inicio |
+| `/usuarios` | `GET /`, `PATCH /:id` | Listado y alta/baja de usuarios |
+| `/retiros` | `GET /`, `GET /resumen`, `POST /` | Historial, resumen y registro de retiros/mermas |
+| `/sucursales` | `GET /` | Listado de sucursales |
 
 ---
 
@@ -102,51 +122,25 @@ Rutas para estadísticas y reportes.
 Contiene lógica reutilizable del sistema.
 
 ### semaforo.service.js
-Calcula el estado de los productos:
-- Verde
-- Amarillo
-- Rojo
-
-según fecha de vencimiento y días de alerta del departamento.
-
----
-
-## 📂 src/middlewares
-Middlewares utilizados por Express.
-
-### auth.middleware.js
-Valida autenticación mediante JWT.
-
-### role.middleware.js
-Controla permisos según rol del usuario.
-
----
-
-## 📂 src/utils
-Funciones auxiliares reutilizables.
-
-### helpers.js
-Funciones de apoyo para validaciones, fechas y utilidades generales.
+Calcula el estado de un producto (`calcularEstado(fechaVencimiento, diasAlerta)`):
+- **ROJO** → ya venció
+- **AMARILLO** → vence dentro de los días de alerta configurados
+- **VERDE** → fuera de la ventana de alerta
 
 ---
 
 ## 📄 src/app.js
-Configura Express, middlewares y rutas principales.
+Configura Express (`cors`, `express.json`) y monta las 7 rutas anteriores.
 
 ---
 
 ## 📄 src/server.js
-Inicializa y levanta el servidor backend.
+Espera a `connectDB()` y luego levanta el servidor con `app.listen`.
 
 ---
 
 ## 📄 .env
-Archivo de variables de entorno.
-
-Ejemplos:
-- conexión a base de datos
-- puerto
-- claves JWT
+Archivo de variables de entorno (no versionado).
 
 ---
 
@@ -155,13 +149,13 @@ Archivo de configuración del proyecto Node.js y dependencias.
 
 ---
 
-## 📄 .gitignore
-Define archivos y carpetas que Git no debe subir.
+## 📄 Dockerfile
+Imagen `node:20`, instala dependencias, copia el código y arranca con `npm run start`. Expone el puerto `3000`.
 
 ---
 
-## 📄 README.md
-Documentación general del backend y estructura del proyecto.
+## 📄 .gitignore
+Define archivos y carpetas que Git no debe subir.
 
 ---
 
@@ -175,28 +169,6 @@ npm init -y
 
 ---
 
-# 📦 Instalación de Dependencias
-
-## Dependencias principales
-
-```bash
-npm install express mssql dotenv cors jsonwebtoken bcryptjs
-```
-
-## Dependencia para conexión Windows + SQL Server
-
-```bash
-npm install msnodesqlv8
-```
-
-## Dependencia de desarrollo
-
-```bash
-npm install --save-dev nodemon
-```
-
----
-
 # 📦 Dependencias Utilizadas
 
 | Dependencia | Función |
@@ -205,10 +177,9 @@ npm install --save-dev nodemon
 | mssql | Conexión con SQL Server |
 | dotenv | Variables de entorno |
 | cors | Comunicación Frontend/Backend |
-| jsonwebtoken | Autenticación JWT |
-| bcryptjs | Encriptación de contraseñas |
-| nodemon | Reinicio automático del servidor |
-| msnodesqlv8 | Driver para conexión SQL Server con autenticación Windows |
+| nodemon | Reinicio automático del servidor (dev) |
+
+> `jsonwebtoken`, `bcryptjs` y `msnodesqlv8` (autenticación Windows) ya no forman parte del proyecto — la conexión actual a SQL Server usa usuario/contraseña estándar y el login todavía no emite JWT ni hashea contraseñas (ver "Lo que falta").
 
 ---
 
@@ -237,11 +208,11 @@ npm install --save-dev nodemon
 ```env
 PORT=3000
 
-DB_DRIVER=msnodesqlv8
-DB_SERVER=ALBANO\SQLEXPRESS01
+DB_SERVER=localhost
 DB_DATABASE=ProyectoBD
-
-JWT_SECRET=proyecto_secreto
+DB_USER=sa
+DB_PASSWORD=tu_password
+DB_PORT=1433
 ```
 
 ---
@@ -255,78 +226,11 @@ node_modules
 
 ---
 
-# 📄 app.js
+# 🐳 Docker
 
-```js
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-
-dotenv.config();
-
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
-app.get('/', (req, res) => {
-    res.json({
-        mensaje: 'Backend funcionando correctamente'
-    });
-});
-
-export default app;
-```
-
----
-
-# 📄 server.js
-
-```js
-import app from './app.js';
-import dotenv from 'dotenv';
-import { connectDB } from './config/db.js';
-
-dotenv.config();
-
-const PORT = process.env.PORT || 3000;
-
-connectDB();
-
-app.listen(PORT, () => {
-    console.log(`Servidor corriendo en puerto ${PORT}`);
-});
-```
-
----
-
-# 📄 db.js
-
-```js
-import sql from 'mssql/msnodesqlv8.js';
-import dotenv from 'dotenv';
-
-dotenv.config();
-
-const config = {
-    server: process.env.DB_SERVER,
-    database: process.env.DB_DATABASE,
-    driver: process.env.DB_DRIVER,
-    options: {
-        trustedConnection: true
-    }
-};
-
-export const connectDB = async () => {
-    try {
-        await sql.connect(config);
-        console.log('Conectado a SQL Server');
-    } catch (error) {
-        console.error('Error de conexión:', error);
-    }
-};
-
-export default sql;
+```bash
+docker build -t gondolapro-back .
+docker run -p 3000:3000 --env-file .env gondolapro-back
 ```
 
 ---
@@ -374,13 +278,15 @@ GET /
 # ✅ Estado Actual del Proyecto
 
 - [x] Configuración inicial del backend
-- [x] Conexión con SQL Server
+- [x] Conexión con SQL Server (con reintentos)
 - [x] Variables de entorno
 - [x] Estructura de carpetas
-- [x] Endpoint de prueba funcionando
-- [ ] Implementación de endpoints
-- [ ] Autenticación JWT
-- [ ] Dashboard
-- [ ] Dockerización
+- [x] Endpoints de auth, productos, inventario, dashboard, usuarios, retiros y sucursales
+- [x] Dockerización
+- [x] Colección de tests de API visual (Bruno) cubriendo todos los endpoints
+- [ ] Autenticación real con JWT (el login solo valida contra la base y devuelve los datos del usuario, sin emitir token)
+- [ ] Hash de contraseñas (hoy se comparan en texto plano)
+- [ ] Middleware de autenticación y control de acceso por rol
+- [ ] Exportación de reportes a Excel/PDF
 
 ---

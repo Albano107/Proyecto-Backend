@@ -1,0 +1,22 @@
+meta {
+  name: Login con PIN (correcto)
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/auth/login-pin
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "pin": "{{pin}}"
+  }
+}
+
+assert {
+  res.status: eq 200
+  res.body.id_usuario: isDefined
+}
