@@ -1,0 +1,16 @@
+meta {
+  name: Resumen de todas las sucursales
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/sucursales/resumen
+  body: none
+  auth: none
+}
+
+assert {
+  res.status: eq 200
+  res.body: isArray
+}
