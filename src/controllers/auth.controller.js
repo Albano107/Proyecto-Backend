@@ -1,4 +1,5 @@
 import sql from '../config/db.js';
+import { registrarAuditoria, ACCIONES } from '../services/auditoria.service.js';
 
 export const login = async (req, res) => {
     try {
@@ -26,7 +27,16 @@ export const login = async (req, res) => {
             return res.status(401).json({ mensaje: 'Credenciales incorrectas' });
         }
 
-        res.status(200).json(resultado.recordset[0]);
+        const usuarioLogueado = resultado.recordset[0];
+
+        await registrarAuditoria({
+            id_usuario: usuarioLogueado.id_usuario,
+            accion: ACCIONES.SESION,
+            detalle: 'Inicio de sesión con email',
+            id_sucursal: usuarioLogueado.id_sucursal,
+        });
+
+        res.status(200).json(usuarioLogueado);
 
     } catch (error) {
         console.error(error);
@@ -59,7 +69,16 @@ export const loginPin = async (req, res) => {
             return res.status(401).json({ mensaje: 'PIN incorrecto' });
         }
 
-        res.status(200).json(resultado.recordset[0]);
+        const usuarioLogueado = resultado.recordset[0];
+
+        await registrarAuditoria({
+            id_usuario: usuarioLogueado.id_usuario,
+            accion: ACCIONES.SESION,
+            detalle: 'Inicio de sesión con PIN',
+            id_sucursal: usuarioLogueado.id_sucursal,
+        });
+
+        res.status(200).json(usuarioLogueado);
 
     } catch (error) {
         console.error(error);

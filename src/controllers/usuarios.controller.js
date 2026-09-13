@@ -1,4 +1,5 @@
 import sql from '../config/db.js';
+import { registrarAuditoria, ACCIONES } from '../services/auditoria.service.js';
 
 export const obtenerUsuarios = async (req, res) => {
     try {
@@ -31,14 +32,34 @@ export const obtenerUsuarios = async (req, res) => {
 export const cambiarEstadoUsuario = async (req, res) => {
     try {
 
-        const { id } = req.params;
-        const { activo } = req.body;
+        const idNum = parseInt(req.params.id, 10);
+        const { activo, id_usuario_actor } = req.body;
 
-        await sql.query(`
+        if (Number.isNaN(idNum)) {
+            return res.status(400).json({ mensaje: 'Usuario inválido' });
+        }
+
+        const objetivo = await sql.query`
+            SELECT nombre, id_sucursal FROM Usuarios
+            WHERE id_usuario = ${idNum}
+        `;
+
+        if (objetivo.recordset.length === 0) {
+            return res.status(404).json({ mensaje: 'Usuario no encontrado' });
+        }
+
+        await sql.query`
             UPDATE Usuarios
             SET activo = ${activo ? 1 : 0}
-            WHERE id_usuario = ${id}
-        `);
+            WHERE id_usuario = ${idNum}
+        `;
+
+        await registrarAuditoria({
+            id_usuario: id_usuario_actor || null,
+            accion: activo ? ACCIONES.ALTA_USUARIO : ACCIONES.BAJA_USUARIO,
+            detalle: `${objetivo.recordset[0].nombre} pasó a ${activo ? 'activo' : 'inactivo'}`,
+            id_sucursal: objetivo.recordset[0].id_sucursal,
+        });
 
         res.status(200).json({
             mensaje: 'Estado actualizado correctamente'

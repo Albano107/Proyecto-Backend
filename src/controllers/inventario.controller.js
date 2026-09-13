@@ -1,5 +1,6 @@
 import sql from '../config/db.js';
 import { calcularEstado } from '../services/semaforo.service.js';
+import { registrarAuditoria, ACCIONES } from '../services/auditoria.service.js';
 
 // GET /inventario
 export const obtenerInventario = async (req, res) => {
@@ -181,7 +182,7 @@ export const obtenerInventario = async (req, res) => {
 // POST /inventario
 export const agregarInventario = async (req, res) => {
     try {
-        const { id_producto, id_sucursal, fecha_vencimiento, cantidad } = req.body;
+        const { id_producto, id_sucursal, fecha_vencimiento, cantidad, id_usuario } = req.body;
 
         if (!id_producto || !id_sucursal || !fecha_vencimiento || cantidad == null) {
             return res.status(400).json({ mensaje: 'Faltan datos obligatorios' });
@@ -192,7 +193,7 @@ export const agregarInventario = async (req, res) => {
         }
 
         const producto = await sql.query`
-            SELECT id_producto FROM Productos
+            SELECT id_producto, nombre FROM Productos
             WHERE id_producto = ${id_producto} AND activo = 1
         `;
 
@@ -217,6 +218,13 @@ export const agregarInventario = async (req, res) => {
             (${id_producto}, ${id_sucursal}, ${fecha_vencimiento}, ${cantidad}, GETDATE())
         `;
 
+        await registrarAuditoria({
+            id_usuario: id_usuario || null,
+            accion: ACCIONES.ALTA,
+            detalle: `Nuevo producto "${producto.recordset[0].nombre}" — ${cantidad} u.`,
+            id_sucursal,
+        });
+
         res.status(201).json({
             mensaje: 'Producto agregado al inventario correctamente',
             id_inventario: insertado.recordset[0].id_inventario
@@ -234,7 +242,7 @@ export const agregarInventario = async (req, res) => {
 export const editarInventario = async (req, res) => {
     try {
         const { id } = req.params;
-        const { fecha_vencimiento, cantidad } = req.body;
+        const { fecha_vencimiento, cantidad, id_usuario } = req.body;
 
         if (!fecha_vencimiento || cantidad == null) {
             return res.status(400).json({ mensaje: 'Faltan datos obligatorios' });
@@ -245,8 +253,10 @@ export const editarInventario = async (req, res) => {
         }
 
         const existente = await sql.query`
-            SELECT id_inventario FROM Inventario
-            WHERE id_inventario = ${id}
+            SELECT i.cantidad, i.fecha_vencimiento, i.id_sucursal, p.nombre AS producto
+            FROM Inventario i
+            INNER JOIN Productos p ON i.id_producto = p.id_producto
+            WHERE i.id_inventario = ${id}
         `;
 
         if (existente.recordset.length === 0) {
@@ -259,6 +269,27 @@ export const editarInventario = async (req, res) => {
                 cantidad = ${cantidad}
             WHERE id_inventario = ${id}
         `;
+
+        const anterior = existente.recordset[0];
+        const cambios = [];
+
+        const fechaAnterior = new Date(anterior.fecha_vencimiento).toISOString().slice(0, 10);
+        const fechaNueva = new Date(fecha_vencimiento).toISOString().slice(0, 10);
+
+        if (fechaAnterior !== fechaNueva) {
+            cambios.push(`vencimiento ${fechaAnterior} → ${fechaNueva}`);
+        }
+
+        if (Number(anterior.cantidad) !== Number(cantidad)) {
+            cambios.push(`cantidad ${anterior.cantidad} → ${cantidad}`);
+        }
+
+        await registrarAuditoria({
+            id_usuario: id_usuario || null,
+            accion: ACCIONES.EDICION,
+            detalle: `${anterior.producto} — ${cambios.length ? cambios.join(' · ') : 'sin cambios'}`,
+            id_sucursal: anterior.id_sucursal,
+        });
 
         res.status(200).json({
             mensaje: 'Inventario actualizado correctamente'
@@ -276,10 +307,13 @@ export const editarInventario = async (req, res) => {
 export const eliminarInventario = async (req, res) => {
     try {
         const { id } = req.params;
+        const { id_usuario } = req.body;
 
         const existente = await sql.query`
-            SELECT id_inventario FROM Inventario
-            WHERE id_inventario = ${id}
+            SELECT i.id_inventario, i.id_sucursal, p.nombre AS producto
+            FROM Inventario i
+            INNER JOIN Productos p ON i.id_producto = p.id_producto
+            WHERE i.id_inventario = ${id}
         `;
 
         if (existente.recordset.length === 0) {
@@ -303,6 +337,15 @@ export const eliminarInventario = async (req, res) => {
             DELETE FROM Inventario
             WHERE id_inventario = ${id}
         `;
+
+        const fila = existente.recordset[0];
+
+        await registrarAuditoria({
+            id_usuario: id_usuario || null,
+            accion: ACCIONES.ELIMINACION,
+            detalle: `Baja de producto "${fila.producto}" (id ${fila.id_inventario})`,
+            id_sucursal: fila.id_sucursal,
+        });
 
         res.status(200).json({
             mensaje: 'Registro eliminado correctamente'

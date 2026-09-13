@@ -9,6 +9,7 @@ import dashboardRoutes from './routes/dashboard.routes.js';
 import usuariosRoutes from './routes/usuarios.routes.js';
 import retirosRoutes from './routes/retiros.routes.js';
 import sucursalesRoutes from './routes/sucursales.routes.js';
+import auditoriasRoutes from './routes/auditorias.routes.js';
 
 dotenv.config();
 
@@ -29,5 +30,6 @@ app.use('/dashboard',  dashboardRoutes);
 app.use('/usuarios',   usuariosRoutes);
 app.use('/retiros',    retirosRoutes);
 app.use('/sucursales', sucursalesRoutes);
+app.use('/auditorias', auditoriasRoutes);
 
 export default app;
