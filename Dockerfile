@@ -1,4 +1,4 @@
-FROM node:20
+FROM node:20 AS builder
 
 WORKDIR /app
 
@@ -7,6 +7,20 @@ RUN npm install
 
 COPY . .
 
+RUN npm run build:protected
+
+
+FROM node:20-slim
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+COPY package*.json ./
+RUN npm install --omit=dev
+
+COPY --from=builder /app/dist ./dist
+
 EXPOSE 3000
 
-CMD ["npm", "run", "start"]
+CMD ["node", "dist/loader.cjs"]

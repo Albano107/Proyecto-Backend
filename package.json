@@ -5,19 +5,23 @@
   "type": "module",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
-  },
+  "start": "node src/server.js",
+  "dev": "nodemon src/server.js",
+  "build:protected": "node build-bytenode.cjs",
+  "start:protected": "node dist/loader.cjs"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bytenode": "^1.6.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "mssql": "^12.5.2"
   },
   "devDependencies": {
+    "esbuild": "^0.28.2",
     "nodemon": "^3.1.14"
   }
 }
