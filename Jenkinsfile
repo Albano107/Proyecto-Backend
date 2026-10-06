@@ -26,7 +26,7 @@ pipeline {
         stage('3. Sintaxis') {
             steps {
                 echo '=== [CI] Validando sintaxis de src/ ==='
-                sh 'find src -name "*.js" -exec node -c {} \\;'
+                sh 'find src -name "*.js" -print0 | xargs -0 -n1 node -c'
             }
         }
 
