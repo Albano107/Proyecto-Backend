@@ -17,9 +17,6 @@ export const obtenerDashboard = async (req, res) => {
             if (Number.isNaN(sucursalId)) {
                 return res.status(400).json({
                     mensaje: 'Sucursal inválida'
-                });
-            }
-        }
 
         const filtroSucursalInventario = sucursalId
             ? `WHERE i.id_sucursal = ${sucursalId}`
