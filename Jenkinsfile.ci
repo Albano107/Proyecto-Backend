@@ -1,0 +1,27 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Instalar dependencias') {
+            steps {
+                bat 'npm install'
+            }
+        }
+
+        stage('Compilar backend protegido') {
+            steps {
+                bat 'npm run build:protected'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Validacion backend correcta.'
+        }
+
+        failure {
+            echo 'La validacion backend fallo.'
+        }
+    }
+}
