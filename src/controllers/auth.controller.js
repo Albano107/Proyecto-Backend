@@ -1,5 +1,10 @@
 import sql from '../config/db.js';
+<<<<<<< Updated upstream
 import { registrarAuditoria, ACCIONES } from '../services/auditoria.service.js';
+=======
+// Error de prueba para Jenkins
+esto es un error de sintaxis que debe fallar el build
+>>>>>>> Stashed changes
 
 export const login = async (req, res) => {
     try {
